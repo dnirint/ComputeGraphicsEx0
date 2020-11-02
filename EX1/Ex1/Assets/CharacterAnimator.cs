@@ -56,7 +56,22 @@ public class CharacterAnimator : MonoBehaviour
     GameObject CreateCylinderBetweenPoints(Vector3 p1, Vector3 p2, float diameter)
     {
         GameObject cylinderObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        return null;
+        Vector3 v = p2 - p1;
+
+        // translation part
+        Vector3 offset = (p1 + p2) / 2;
+        Matrix4x4 translateMatrix = MatrixUtils.Translate(offset);
+        // rotation part
+        Matrix4x4 rotateMatrix = RotateTowardsVector(v);
+        // scaling part
+        var distance = Vector3.Distance(p1, p2)/2;
+        Vector3 scaleVector = new Vector3(diameter, distance, diameter);
+        Matrix4x4 scaleMatrix = Matrix4x4.Scale(scaleVector);
+        // application part
+        Matrix4x4 finalMatrix = translateMatrix * rotateMatrix * scaleMatrix;
+        MatrixUtils.ApplyTransform(cylinderObject, finalMatrix);
+
+        return cylinderObject;
     }
 
     private static Vector3 scaleBy2Vector = new Vector3(2, 2, 2);
@@ -78,9 +93,12 @@ public class CharacterAnimator : MonoBehaviour
         Matrix4x4 offsetToParent = MatrixUtils.Translate(joint.offset+parentPosition);
         MatrixUtils.ApplyTransform(joint.gameObject, offsetToParent);
 
+        var jointPosition = joint.gameObject.transform.position;
         foreach (var child in joint.children)
         {
-            CreateJoint(child, joint.gameObject.transform.position);
+            var childGameObject = CreateJoint(child, jointPosition);
+            GameObject cylinder = CreateCylinderBetweenPoints(jointPosition, childGameObject.transform.position,0.5f);
+            cylinder.transform.parent = joint.gameObject.transform;
         }
 
         return joint.gameObject;
