@@ -101,7 +101,6 @@ public class CharacterAnimator : MonoBehaviour
                 continue;
             }
             var childGameObject = CreateJoint(child, jointPosition);
-            childGameObject.transform.parent = joint.gameObject.transform;
             GameObject cylinder = CreateCylinderBetweenPoints(jointPosition, childGameObject.transform.position, 0.5f);
             cylinder.transform.parent = joint.gameObject.transform;
         }
@@ -118,10 +117,10 @@ public class CharacterAnimator : MonoBehaviour
         int x = joint.positionChannels[0], y = joint.positionChannels[1], z = joint.positionChannels[2];
         Vector3 positionValues = new Vector3(keyframe[x], keyframe[y], keyframe[z]);
 
+        Matrix4x4 translateMatrix = MatrixUtils.Translate(positionValues);
+
         int rx = joint.rotationChannels[0], ry = joint.rotationChannels[1], rz = joint.rotationChannels[2];
         Vector3 rotationValues = new Vector3(keyframe[rx], keyframe[ry], keyframe[rz]);
-
-        Matrix4x4 translateMatrix = MatrixUtils.Translate(positionValues);
 
         Matrix4x4 rotationMatrix = Matrix4x4.identity;
         for(int i=0; i<3; i++)
@@ -142,11 +141,9 @@ public class CharacterAnimator : MonoBehaviour
                     break;
             }
         }
-        
 
-        //Matrix4x4 transformMatrix = parentTransform * translateMatrix * rotationMatrix;
-        Matrix4x4 transformMatrix =  translateMatrix * parentTransform * rotationMatrix;
-        //Matrix4x4 transformMatrix = parentTransform * translateMatrix * rotationMatrix;
+
+        Matrix4x4 transformMatrix = parentTransform * translateMatrix * rotationMatrix;
 
         MatrixUtils.ApplyTransform(joint.gameObject, transformMatrix);
 
