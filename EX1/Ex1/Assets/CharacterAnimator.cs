@@ -163,14 +163,46 @@ public class CharacterAnimator : MonoBehaviour
     {
         if (animate)
         {
+            /*
+             * Assume animation is intended for 60 frames per minute
+             * Meaning each frame hits exactly one second
+             * 
+             * Assume our computer calls Update() every 2 seconds
+             * 
+             * Time.time advanced but nextActionTime is still Time.time - nextActionTime
+             * 
+             * [0,1,2,3,4,5,6,7,8,9]
+             * 
+             * second 2:
+             * nextActionTime = 1
+             * 
+             * after nextActionTime = 3
+             * 
+             * second 4:
+             * nextActionTime = 2
+             * 
+             * after nextActionTime = 5
+             * 
+             * second 6:
+             * nextActionTime = 5
+             * 
+             * after nextActionTime = 7
+             * 
+
+             * 
+             */
             if (Time.time > nextActionTime)
             {
+                currFrame = (int)Mathf.Floor(Time.time / data.frameLength);
                 TransformJoint(data.rootJoint, Matrix4x4.identity, data.keyframes[currFrame]);
-                
-                currFrame = (currFrame + 1) % data.numFrames;
-                nextActionTime += data.frameLength;
+                Debug.Log($"FRAME (time: {Time.time}):\n\tlast frame: {nextActionTime}");
+               
+                nextActionTime = Time.time + data.frameLength;
+                Debug.Log($"Current frame (length: {data.frameLength}): {currFrame}\n\tnextActionTime: {nextActionTime}");
                 
             }
+
+
             
         }
     }
