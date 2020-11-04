@@ -29,19 +29,16 @@ public class CharacterAnimator : MonoBehaviour
     // Returns a Matrix4x4 representing a rotation aligning the up direction of an object with the given v
     Matrix4x4 RotateTowardsVector(Vector3 v)
     {
-        Vector3 worldUpDirection = new Vector3(0, 1, 0);
-
-        //preparation
         Vector3 normalizedV = v.normalized;
-
+        // rotate about the X axis
         var angleX = -Mathf.Atan2(normalizedV[2], normalizedV[1]) * Mathf.Rad2Deg;
         Matrix4x4 rotateX = MatrixUtils.RotateX(angleX);
-
+        // rotate about the z axis
         float a = normalizedV[0], b = normalizedV[1], c = normalizedV[2];
         var sqrtResult = Mathf.Sqrt(Mathf.Pow(c, 2) + Mathf.Pow(b, 2));
         var angleZ = Mathf.Atan2(a, sqrtResult) * Mathf.Rad2Deg;
         Matrix4x4 rotateZ = MatrixUtils.RotateZ(angleZ);
-
+        // apply the rotations and generate the inverse to them
         var generalRotate = rotateZ * rotateX;
         var inverseGeneralRotate = generalRotate.inverse;
 
@@ -75,16 +72,17 @@ public class CharacterAnimator : MonoBehaviour
     // Creates a GameObject representing a given BVHJoint and recursively creates GameObjects for it's child joints
     GameObject CreateJoint(BVHJoint joint, Vector3 parentPosition)
     {
+        // create joint game object and define it as parent of the new sphere object
         joint.gameObject = new GameObject(joint.name);
         GameObject sphereObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         sphereObject.transform.parent = joint.gameObject.transform;
-
+        // scale the sphere according to joint type
         Matrix4x4 scaleMatrix = (joint.name.Equals("Head")) ? scaleBy8Matrix : scaleBy2Matrix;
         MatrixUtils.ApplyTransform(sphereObject, scaleMatrix);
-
+        // offset the joint game object in relation to it's parent's position
         Matrix4x4 offsetToParent = MatrixUtils.Translate(joint.offset + parentPosition);
         MatrixUtils.ApplyTransform(joint.gameObject, offsetToParent);
-
+        // Generate cylinder objects between the Joint and it's children (ignore EndSites)
         var jointPosition = joint.gameObject.transform.position;
         foreach (var child in joint.children)
         {
@@ -107,26 +105,26 @@ public class CharacterAnimator : MonoBehaviour
     // Transforms BVHJoint according to the keyframe channel data, and recursively transforms its children
     private void TransformJoint(BVHJoint joint, Matrix4x4 parentTransform, float[] keyframe)
     {
+        // if no position is given we only offset the joint based on it's offset value
         Matrix4x4 translateMatrix = MatrixUtils.Translate(joint.offset);
         if (joint.positionChannels != Vector3.zero)
         {
-
-            int x = joint.positionChannels[0], y = joint.positionChannels[1], z = joint.positionChannels[2];
-            Vector3 positionValues = new Vector3(keyframe[x], keyframe[y], keyframe[z]);
+            int px = joint.positionChannels[0], py = joint.positionChannels[1], pz = joint.positionChannels[2];
+            Vector3 positionValues = new Vector3(keyframe[px], keyframe[py], keyframe[pz]);
             translateMatrix = MatrixUtils.Translate(positionValues);
         }
 
+        // same here, if no rotation is given, we do not rotate the joint (this is why we use an identity matrix)
         Matrix4x4 rotationMatrix = Matrix4x4.identity;
         if (joint.rotationChannels != Vector3.zero)
         {
             int rx = joint.rotationChannels[0], ry = joint.rotationChannels[1], rz = joint.rotationChannels[2];
             Vector3 rotationValues = new Vector3(keyframe[rx], keyframe[ry], keyframe[rz]);
-
+            // apply rotations in the correct order
             for (int i = 0; i < 3; i++)
             {
                 switch (joint.rotationOrder[i])
                 {
-
                     case 0:
                         rotationMatrix *= MatrixUtils.RotateX(rotationValues[0]);
                         break;
@@ -152,9 +150,6 @@ public class CharacterAnimator : MonoBehaviour
             }
             TransformJoint(child, transformMatrix, keyframe);
         }
-
-
-
     }
 
     private float nextActionTime = 0.0f;
@@ -163,47 +158,15 @@ public class CharacterAnimator : MonoBehaviour
     {
         if (animate)
         {
-            /*
-             * Assume animation is intended for 60 frames per minute
-             * Meaning each frame hits exactly one second
-             * 
-             * Assume our computer calls Update() every 2 seconds
-             * 
-             * Time.time advanced but nextActionTime is still Time.time - nextActionTime
-             * 
-             * [0,1,2,3,4,5,6,7,8,9]
-             * 
-             * second 2:
-             * nextActionTime = 1
-             * 
-             * after nextActionTime = 3
-             * 
-             * second 4:
-             * nextActionTime = 2
-             * 
-             * after nextActionTime = 5
-             * 
-             * second 6:
-             * nextActionTime = 5
-             * 
-             * after nextActionTime = 7
-             * 
-
-             * 
-             */
             if (Time.time > nextActionTime)
             {
+                // in each relevant frame, we compute the next time we need to update the frame
+                // we also compute the current frame based on how many frames we missed since the expected time
                 currFrame = (int)Mathf.Floor(Time.time / data.frameLength);
-                TransformJoint(data.rootJoint, Matrix4x4.identity, data.keyframes[currFrame]);
-                Debug.Log($"FRAME (time: {Time.time}):\n\tlast frame: {nextActionTime}");
-               
+                TransformJoint(data.rootJoint, Matrix4x4.identity, data.keyframes[currFrame]);               
                 nextActionTime = Time.time + data.frameLength;
-                Debug.Log($"Current frame (length: {data.frameLength}): {currFrame}\n\tnextActionTime: {nextActionTime}");
-                
             }
-
-
-            
+ 
         }
     }
 }
