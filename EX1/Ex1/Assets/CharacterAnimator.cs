@@ -162,7 +162,7 @@ public class CharacterAnimator : MonoBehaviour
             {
                 // in each relevant frame, we compute the next time we need to update the frame
                 // we also compute the current frame based on how many frames we missed since the expected time
-                currFrame = (int)Mathf.Floor(Time.time / data.frameLength);
+                currFrame = (int)Mathf.Floor(Time.time / data.frameLength) % data.numFrames;
                 TransformJoint(data.rootJoint, Matrix4x4.identity, data.keyframes[currFrame]);               
                 nextActionTime = Time.time + data.frameLength;
             }
