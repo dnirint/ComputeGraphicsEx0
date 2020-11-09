@@ -86,10 +86,6 @@ public class CharacterAnimator : MonoBehaviour
         var jointPosition = joint.gameObject.transform.position;
         foreach (var child in joint.children)
         {
-            if (child.isEndSite)
-            {
-                continue;
-            }
             var childGameObject = CreateJoint(child, jointPosition);
 
             GameObject cylinder = CreateCylinderBetweenPoints(jointPosition, childGameObject.transform.position, 0.5f);
@@ -144,10 +140,6 @@ public class CharacterAnimator : MonoBehaviour
 
         foreach(var child in joint.children)
         {
-            if (child.isEndSite)
-            {
-                continue;
-            }
             TransformJoint(child, transformMatrix, keyframe);
         }
     }
